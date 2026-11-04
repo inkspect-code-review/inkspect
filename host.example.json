@@ -1,0 +1,21 @@
+{
+  "model_id": "REPLACE_WITH_YOUR_BEDROCK_MODEL_ID",
+  "model_region": "eu-west-2",
+  "model_max_output_tokens": 8192,
+  "timeout_seconds": 1800,
+  "model_input_allowance": 100000,
+  "model_max_request_bytes": 1000000,
+  "input_nano_usd": null,
+  "output_nano_usd": null,
+  "budget_nano_usd": null,
+  "retrieval": {
+    "region": "eu-west-2", "embed_model": "REPLACE_WITH_YOUR_EMBEDDING_MODEL_ID",
+    "rerank_region": "eu-central-1", "rerank_model": "REPLACE_WITH_YOUR_RERANKING_MODEL_ID",
+    "dimensions": 1024, "candidates": 40, "top_n": 8, "queries": 8,
+    "content_bytes": 16384, "max_files": 100
+  },
+  "sandbox": {
+    "runtime": "docker", "image": "", "cpu_millis": 2000,
+    "memory_mib": 2048, "pids": 256, "clone_mib": 500, "containerize": false
+  }
+}

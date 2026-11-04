@@ -1,0 +1,18 @@
+{
+  "release": "0.1.0",
+  "engine_commit": "67702d3b33df51c52e113bddcebd2039ff9db331",
+  "artifacts": {
+    "api": {
+      "file": "vendor/inkspect-api-0.1.0.tar.gz",
+      "sha256": "3dbadc88b33c6458e983d0c8926395903515c075f61e7f73b324f7aec2e5a08d"
+    },
+    "ui": {
+      "file": "vendor/inkspect-ui-0.1.0.tar.gz",
+      "sha256": "03017633465792a21440ead9873023aa90914e1dc6fa50f51a0cd3a6b1fa58a5"
+    },
+    "engine": {
+      "file": "vendor/engine-67702d3b.tar.gz",
+      "sha256": "3a96cc0ad3a50b742cf7804a3bdb02d3d435d2c22fbc89d179407e17b1fa01e2"
+    }
+  }
+}
