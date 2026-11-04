@@ -1,6 +1,6 @@
 # Repository instructions
 
-Owns the self-hosted installer and distribution. Only core, API, UI and the public Rust engine belong in source archives. Keep internal architecture maps, commercial operations, private handoffs and private package update tools out of this repository.
+Owns the self-hosted Compose distribution. Only core, API, UI and the public Rust engine belong in distribution builds. Keep internal architecture maps, commercial operations, private handoffs and private package update tools out of this repository.
 
 This repository is intended for open-source release even while its visibility is private. If a request is exclusively for a private hosted product, route the implementation to its private application checkout; do not put it here behind a flag. No proprietary code or internal operational documents may be copied here.
 

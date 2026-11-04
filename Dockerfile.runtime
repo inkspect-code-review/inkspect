@@ -1,0 +1,3 @@
+# syntax=docker/dockerfile:1
+# Compose resolves this context to the API image built in the same invocation.
+FROM api_runtime

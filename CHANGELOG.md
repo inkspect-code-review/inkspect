@@ -17,6 +17,12 @@ as appropriate. The package's `0.1.0` version is not a claim of a tagged release
 
 #### Changed
 
+- Replace the host Python installer and duplicated source bundles with pinned
+  Docker Compose source builds, containerized setup and automatic worker activation.
+- Add existing-checkout and SSH-agent build options, private configuration volume,
+  generated instance secrets, and Docker-only installation/verification instructions.
+- Rename the project README to Inkspect Code Review and simplify its license text.
+
 - Standardized the initial commit subject and future commit/PR titles as
   `type(scope): short imperative description` (maximum 72 characters).
 - Included the approved MIT license and contribution documentation in packaged

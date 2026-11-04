@@ -1,89 +1,178 @@
-# Inkspect self-hosted
+# Inkspect Code Review
 
-This repository installs the self-hosted dashboard, API and optional review workers. Payment processing, subscription purchases, paid seats, Cloud credits and Cloud support policies are not included. Authentication, organization roles and member invitations remain available.
-
-Source code is licensed under [MIT](LICENSE). Repository visibility is managed separately; this preparation does not change visibility or publish a tagged release. The bundled engine retains its own license.
+Run the Inkspect dashboard, API and review engine with Docker Compose.
+Licensed under [MIT](LICENSE).
 
 ## Components
 
 | Repository | Purpose |
 | --- | --- |
-| `inkspect` | Installer, Compose and versioned self-hosted releases |
+| `inkspect` | Compose distribution and installation documentation |
 | `inkspect-core` | Shared authentication, database and domain library |
-| `inkspect-api` | Self-hosted API and review workers |
-| `inkspect-ui` | Self-hosted Next application and reusable components |
+| `inkspect-api` | API, migrations and review workers |
+| `inkspect-ui` | Dashboard and reusable components |
 | `inkspect-code-review-engine` | Rust review engine |
 
-Each application installs from its own checkout, without sibling source folders. Only these self-hosted components belong in this distribution.
+Compose builds API/UI from pinned Git commits and compiles the pinned Rust engine
+inside Docker. Core is already packaged in the applications' dependencies; it
+does not need its own checkout or container. PostgreSQL and Qdrant use persistent
+Docker volumes.
+
+## Requirements
+
+- Docker Engine or Docker Desktop with Compose **2.24 or newer**, BuildKit and
+  Linux containers. No host Python, Node.js or Rust installation is needed.
+- Enough memory and disk for Node and Rust builds; the first build takes longer.
+- An HTTPS origin and a reverse proxy forwarding to the local web port.
+- SMTP or GitHub OAuth credentials for sign-in.
+- For reviews: your GitHub App, AWS/model access and model configuration.
+
+The Docker commands below are the same on Linux, macOS and Windows PowerShell
+with Docker Desktop running Linux containers. Host file permissions depend on
+the platform; on Windows restrict `.env` and `config/` using your user folder ACLs.
 
 ## Install
 
-Requires Python 3, Docker with Compose v2, sufficient disk/memory to build Node and Rust applications, an HTTPS domain/reverse proxy, and SMTP or GitHub OAuth credentials for sign-in. Choose a free local web port. API and database ports are not published.
+Download or clone this repository, then run from its directory:
 
 ```sh
-./install.sh --check
-./install.sh --prepare --directory "$HOME/inkspect-instance" --origin https://review.example.com --port 3002
-cd "$HOME/inkspect-instance"
-# Configure .env with SMTP or GitHub OAuth. Keep generated secrets unchanged.
-docker compose build api web
-docker compose up --no-build --wait db api web
+docker compose -f compose.setup.yaml run --rm setup
 ```
 
-Alternatively, omit `--prepare` to build/start immediately after generating configuration. Authentication credentials and HTTPS ingress still need configuration. `--check` only verifies checksums and archive paths. The installer refuses to overwrite an existing installation. `.env` is created with owner-only permissions and fresh secrets; never commit it or `config/` credentials.
+This runs setup **inside Docker**, creates `.env`, `config/host.json` and a webhook
+secret, and generates independent database, session and service secrets. It never
+overwrites existing `.env` or `config/`. Keep those secrets when restarting or
+upgrading. Do not commit either file or directory.
 
-Point your HTTPS reverse proxy at `127.0.0.1:3002` (or the chosen port). Preserve the public host and HTTPS forwarding headers. Overwrite client-supplied `X-Real-IP` with the actual client address; keep the backend inaccessible directly from the internet. `BETTER_AUTH_URL` must match the public HTTPS origin. Email/OAuth credentials belong in the instance `.env`, not this source repository. See the extracted `api/.env.example` for additional supported configuration.
+Edit `.env`:
 
-Basic installation starts PostgreSQL, migrations, API and dashboard. It does not silently enable external review work or buy anything. Configure review providers before enabling workers.
+| Setting | What to supply |
+| --- | --- |
+| `BETTER_AUTH_URL` | Your public HTTPS origin, for example `https://review.example.com` |
+| `HTTP_PORT` | A free local web port; defaults to `3002` |
+| `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET` | GitHub sign-in credentials, if using OAuth |
+| `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `MAIL_FROM` | Mail delivery for magic links and invitations |
+| `GITHUB_APP_ID`, `GITHUB_APP_SLUG` | Your repository GitHub App |
+| `GITHUB_APP_CLIENT_ID`, `GITHUB_APP_CLIENT_SECRET` | Only when the repository App differs from the sign-in application |
+| `AWS_REGION` and AWS credentials | Your model-provider access; temporary credentials also need `AWS_SESSION_TOKEN` |
+| `INKSPECT_DEFAULT_CHAT_MODEL` | Your selected chat model |
+| `COMPOSE_PROFILES` | `reviews` for the full stack; empty for dashboard/API only |
 
-## Enable repository reviews
+If the container runtime already provides an AWS identity, explicit access keys
+are unnecessary. Configure supported model access for your chosen region.
+The generated secrets and internal service addresses need no manual configuration.
 
-1. Configure GitHub App/OAuth identifiers in `.env`, mount its private key at `config/github-app.pem`, and put its webhook secret in `config/github-webhook-secret`. Ensure the container's `node` user can read these files. Set up GitHub callbacks/webhook routing for your public HTTPS origin.
-2. Replace placeholders in `config/host.json` with your Bedrock model, embedding and reranking configuration. Set AWS credentials/region in `.env` and any desired usage costing configuration. Use your own provider accounts. The template does not enable sandboxed auto-fix execution.
-3. Build the engine worker after building the API image, then start the review profile and activate the matching generation:
+For reviews, also:
+
+1. Save your GitHub App's private key as `config/github-app.pem`.
+2. Copy the value from `config/github-webhook-secret` into the App's webhook
+   settings. Route its webhook to `/api/webhooks/github` on your public origin;
+   configure the App/OAuth callback URLs for the selected sign-in setup.
+3. Edit `config/host.json`: set the review model, embedding and reranking model
+   identifiers/regions. Set positive `input_nano_usd`, `output_nano_usd` and
+   `budget_nano_usd` using your provider's prices and your chosen review budget.
+   Prices are nano-USD per token; the budget must cover the configured maximum
+   input/output allowances. The template intentionally leaves these unset.
+   Keep `sandbox.containerize` false; this distribution does not mount a Docker
+   socket for arbitrary code execution.
+
+Start everything:
 
 ```sh
-docker compose build api
-docker compose --profile reviews build engine
-docker compose --profile reviews up -d --no-build
-docker compose exec api node dist/engine-admin.mjs activate instance-v1 http://127.0.0.1:8091
-docker compose exec api node dist/engine-admin.mjs status
+docker compose up -d --build --wait
 ```
 
-The worker shares the API's network namespace so the authenticated engine gateway stays on loopback. The generation must match `INKSPECT_GENERATION` in `.env`. Qdrant and database storage use named volumes. Provider calls, real GitHub workflows and auto-fix execution require your own configured infrastructure; startup checks alone do not verify them.
+This command uses anonymous HTTPS Git access for source builds. If a source
+repository requires authentication, use one of the options below.
 
-## Develop independently
+### Build from existing checkouts
 
-Each component requires Node >=22.13 and includes a lockfile plus versioned internal dependency archives in `vendor/`:
+With API and UI next to this repository, no Git credentials need to enter Docker:
+
+```text
+component-checkouts/
+  inkspect/
+  inkspect-api/
+  inkspect-ui/
+```
 
 ```sh
-npm ci
-npm run audit
-npm test
-npm run build
+docker compose -f compose.yaml -f compose.local.yaml up -d --build --wait
 ```
 
-The core package is a library, not a standalone server. API/UI applications need their documented runtime database and service configuration. Dependency archives are generated artifacts, not additional source trees to edit. Consumers do not require npm publication or another checkout.
+This builds the actual local files, including uncommitted edits, instead of the
+pinned API/UI commits. It still fetches the pinned public engine. Each application
+already carries its core dependency; sibling core source is not required.
+Use the same `-f` options for subsequent status, logs and stop commands.
 
-To update shared code, edit its owning repository, then explicitly refresh downstream dependencies from the directory containing the component checkouts:
+### Build repositories using your existing SSH access
+
+If your running SSH agent is authorized for the source repositories:
 
 ```sh
-node scripts/sync-packages.mjs /path/to/component-checkouts
-python3 scripts/assemble.py /path/to/component-checkouts
-./install.sh --check
-python3 -m unittest discover -s tests -v
+docker compose -f compose.yaml -f compose.ssh.yaml up -d --build --wait
 ```
 
-The sync command rebuilds internal packages in dependency order and updates lockfile integrity. Run affected component checks afterward. `assemble.py` includes only self-hosted UI/API source releases and pins the public Rust engine to the commit recorded in `versions.json`. It does not download a changing branch or include Cloud source. The engine archive and checksum must be deliberately updated together for a new engine version.
+The SSH agent is forwarded only during source builds. No access token is added
+to `.env`, and no SSH private key is copied into the images. A GitHub browser
+session does not authenticate Docker builds. Use the local-checkout option when
+SSH-agent forwarding is unavailable on your host.
+
+### Ingress and startup
+
+Only the dashboard port is published, bound to `127.0.0.1`. Point your HTTPS
+reverse proxy at `127.0.0.1:3002` or your chosen port. Preserve the public host and
+HTTPS forwarding headers and overwrite client-supplied `X-Real-IP` with the real
+client address. If your proxy runs in a container, explicitly connect it to the
+Compose network and route it to `web:3002` instead of its own loopback address.
+
+Configuration is copied into a private named volume readable by the non-root
+application user, so host files can keep owner-only permissions. PostgreSQL
+becomes ready before migrations run. The API starts after migration, followed by
+the dashboard. With `reviews` enabled, Compose starts Qdrant and the engine,
+automatically activates its generation, then starts the metadata and PR workers.
+The engine gateway stays on the API's loopback network namespace.
+
+```sh
+docker compose ps
+docker compose logs --tail=100 configure migrate api web engine activate
+```
+
+Missing GitHub/model settings fail with a configuration error. To start only the
+dashboard while preparing those settings, clear `COMPOSE_PROFILES` in `.env`.
+SMTP or OAuth still needs configuration before users can sign in.
 
 ## Operations and upgrades
 
-Back up PostgreSQL, Qdrant, engine state, `.env` and `config/`. Do not run `docker compose down --volumes` on a real installation unless intentionally deleting its data. No automatic upgrade command is provided yet. For an upgrade, prepare a separate candidate directory, review migrations and validate against a restored backup before switching services. Reuse the intended instance secrets and storage explicitly; do not assume a code rollback reverses database migrations.
+Back up PostgreSQL, Qdrant, engine state, `.env` and `config/`. `docker compose down`
+preserves named volumes; `down --volumes` deletes them. Keep the same Compose
+project name and storage when restarting an instance. Use different project names
+and web ports for independent instances. Stop review workers before disabling
+their profile; changing `COMPOSE_PROFILES` alone does not stop existing containers.
 
-See [release checks](docs/release-checks.md) for the automated self-hosted checks and their limits.
+For upgrades, read the changelog, review migrations and test against a restored
+backup first. Preserve existing configuration and secrets; do not rerun setup.
+Stop the stack with `docker compose down`, update the distribution to the intended
+version, then run the same `up -d --build --wait` command. This includes downtime
+and recreates workers sharing the API's network namespace. A source rollback does
+not reverse database migrations. Update the HTTPS/SSH source pins together when
+preparing a new distribution release.
 
-## Contributing and community
+## Develop and contribute
 
-Read [CONTRIBUTING.md](CONTRIBUTING.md) for setup, checks, commit notation and
-opening a pull request. All changes need an entry in [CHANGELOG.md](CHANGELOG.md).
-Follow our [Code of Conduct](CODE_OF_CONDUCT.md), use [SUPPORT.md](SUPPORT.md)
-for help, and report vulnerabilities privately using [SECURITY.md](SECURITY.md).
+Run distribution tests without installing a host language runtime:
+
+```sh
+docker compose -f compose.setup.yaml run --rm test
+```
+
+Component source changes belong in their own repositories. Run `npm ci`,
+`npm run audit`, `npm test` and `npm run build` there. To deliberately refresh
+shared package dependencies, maintainers can run
+`node scripts/sync-packages.mjs /path/to/component-checkouts` with Node 22.13+.
+This developer command is not part of installation. Commit and verify compatible
+component releases before updating the pinned Compose source references.
+
+See [release checks](docs/release-checks.md), [CONTRIBUTING.md](CONTRIBUTING.md),
+[CHANGELOG.md](CHANGELOG.md), [Code of Conduct](CODE_OF_CONDUCT.md),
+[SUPPORT.md](SUPPORT.md) and [SECURITY.md](SECURITY.md).

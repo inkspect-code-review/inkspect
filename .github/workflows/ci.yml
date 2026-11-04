@@ -9,10 +9,12 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           persist-credentials: false
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-      - run: python3 -m unittest discover -s tests -v
-      - run: ./install.sh --check
-      - run: ./install.sh --prepare --directory /tmp/inkspect-instance --origin https://review.example.com
-      - run: docker compose --env-file /tmp/inkspect-instance/.env -f /tmp/inkspect-instance/compose.yaml config --quiet
+      - run: docker compose -f compose.setup.yaml run --rm test
+      - run: docker compose -f compose.setup.yaml run --rm setup
+      - run: docker compose config --quiet
+      - run: docker compose -f compose.yaml -f compose.local.yaml config --quiet
+      - run: docker compose build --print > /tmp/inkspect-build.json
+      - name: Check SSH overlay and pin consistency without credentials
+        run: |
+          SSH_AUTH_SOCK=/tmp/unused-agent docker compose -f compose.yaml -f compose.ssh.yaml config --quiet
+          docker run --rm -v "$PWD:/distribution:ro" -w /distribution node:22-bookworm-slim node tests/source-pins.mjs

@@ -7,18 +7,19 @@ Read [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) before participating.
 
 ## Set up and verify
 
-Requires Python 3 and Docker with Compose v2 for container checks.
+Requires Docker with Compose 2.24+ and Linux containers.
 
 ```sh
-python3 -m unittest discover -s tests -v
-./install.sh --check
-./install.sh --prepare --directory /tmp/inkspect-contribution-check --origin https://review.example.com
-docker compose --env-file /tmp/inkspect-contribution-check/.env -f /tmp/inkspect-contribution-check/compose.yaml config --quiet
+docker compose -f compose.setup.yaml run --rm test
+docker compose -f compose.setup.yaml run --rm setup
+docker compose config --quiet
+docker compose build --print
 ```
 
-Choose a new temporary directory for each preparation attempt. The installer
-refuses to overwrite existing configuration. `--prepare` does not start services.
-Only run a full instance after configuring your own disposable environment.
+Use a disposable checkout for setup checks. Setup refuses to overwrite `.env` or
+`config/`. The test service uses temporary directories and no provider calls.
+Start a full instance only after configuring your own disposable environment.
+Use `compose.local.yaml` to build sibling source checkouts; see README.md.
 
 ## Make a change
 

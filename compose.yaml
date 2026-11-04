@@ -5,6 +5,11 @@ x-app: &app
     NODE_ENV: production
     API_HOST: 0.0.0.0
     PORT: 3003
+    DATABASE_URL: postgresql://inkspect:${POSTGRES_PASSWORD:?Run the setup service first}@db:5432/inkspect
+    BETTER_AUTH_URL: ${BETTER_AUTH_URL:?Set the public HTTPS origin in .env}
+    BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?Run the setup service first}
+    INKSPECT_ENGINE_SECRET: ${INKSPECT_ENGINE_SECRET:?Run the setup service first}
+    INKSPECT_GENERATION: instance-v1
     INKSPECT_API_ORIGIN: http://api:3003
     INKSPECT_ENGINE_URL: http://127.0.0.1:8091
     INKSPECT_QDRANT_URL: http://qdrant:6333
@@ -14,15 +19,36 @@ x-app: &app
     GITHUB_APP_PRIVATE_KEY_FILE: /config/github-app.pem
     API_GITHUB_WEBHOOK_SECRET_FILE: /config/github-webhook-secret
   volumes:
-    - ./config:/config:ro
+    - runtime-config:/config:ro
     - engine-state:/state
+x-api-runtime: &api-runtime
+  context: .
+  dockerfile: Dockerfile.runtime
+  additional_contexts:
+    api_runtime: service:api
 services:
+  configure:
+    image: node:22-bookworm-slim
+    env_file: .env
+    environment:
+      INKSPECT_REVIEW_PROFILE: ${COMPOSE_PROFILES:-}
+    working_dir: /distribution
+    command: [node, scripts/configure.mjs, /input, /output]
+    volumes:
+      - ./scripts:/distribution/scripts:ro
+      - type: bind
+        source: ./config
+        target: /input
+        read_only: true
+        bind: {create_host_path: false}
+      - runtime-config:/output
+    restart: 'no'
   db:
     image: postgres:17-alpine
     environment:
       POSTGRES_DB: inkspect
       POSTGRES_USER: inkspect
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Run the setup service first}
     volumes: [database:/var/lib/postgresql/data]
     healthcheck:
       test: [CMD-SHELL, 'pg_isready -U inkspect -d inkspect']
@@ -31,15 +57,16 @@ services:
       retries: 30
   migrate:
     <<: *app
-    image: ${INKSPECT_IMAGE_PREFIX:-inkspect}-api:0.1.0
+    build: *api-runtime
     command: [npm, run, migrate]
     restart: 'no'
     depends_on:
+      configure: {condition: service_completed_successfully}
       db: {condition: service_healthy}
   api:
     <<: *app
-    image: ${INKSPECT_IMAGE_PREFIX:-inkspect}-api:0.1.0
-    build: ./api
+    build:
+      context: https://github.com/inkspect-code-review/inkspect-api.git#e43e758830f480ee8d52f23fdf62be2e954c8f61
     restart: unless-stopped
     depends_on:
       migrate: {condition: service_completed_successfully}
@@ -50,9 +77,8 @@ services:
       retries: 30
   web:
     <<: *app
-    image: ${INKSPECT_IMAGE_PREFIX:-inkspect}-ui:0.1.0
     build:
-      context: ./ui
+      context: https://github.com/inkspect-code-review/inkspect-ui.git#0f1e7665bb94cab4bf8c64aae0a8f83558335831
       args: {INKSPECT_API_ORIGIN: 'http://api:3003'}
     ports: ['127.0.0.1:${HTTP_PORT:-3002}:3002']
     environment:
@@ -73,12 +99,12 @@ services:
     volumes: [vectors:/qdrant/storage]
   engine:
     <<: *app
-    image: ${INKSPECT_IMAGE_PREFIX:-inkspect}-engine-worker:0.1.0
     build:
       context: .
       dockerfile: Dockerfile.engine
-      args:
-        INKSPECT_API_IMAGE: ${INKSPECT_IMAGE_PREFIX:-inkspect}-api:0.1.0
+      additional_contexts:
+        api_runtime: service:api
+        engine_source: https://github.com/inkspect-code-review/inkspect-code-review-engine.git#67702d3b33df51c52e113bddcebd2039ff9db331
     profiles: [reviews]
     network_mode: service:api
     environment:
@@ -89,9 +115,22 @@ services:
     depends_on:
       api: {condition: service_healthy}
       qdrant: {condition: service_started}
+    healthcheck:
+      test: [CMD, node, -e, 'fetch("http://127.0.0.1:8091/ready").then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))']
+      interval: 5s
+      timeout: 3s
+      retries: 30
+  activate:
+    <<: *app
+    build: *api-runtime
+    profiles: [reviews]
+    command: [node, dist/engine-admin.mjs, activate, instance-v1, 'http://127.0.0.1:8091']
+    restart: 'no'
+    depends_on:
+      engine: {condition: service_healthy}
   metadata:
     <<: *app
-    image: ${INKSPECT_IMAGE_PREFIX:-inkspect}-api:0.1.0
+    build: *api-runtime
     profiles: [reviews]
     network_mode: service:api
     command: [node, dist/metadata-worker.mjs]
@@ -100,10 +139,15 @@ services:
       INKSPECT_HEALTH_PORT: 8092
     restart: unless-stopped
     depends_on:
-      api: {condition: service_healthy}
+      activate: {condition: service_completed_successfully}
+    healthcheck:
+      test: [CMD, node, -e, 'fetch("http://127.0.0.1:8092/ready").then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))']
+      interval: 5s
+      timeout: 3s
+      retries: 30
   pulls:
     <<: *app
-    image: ${INKSPECT_IMAGE_PREFIX:-inkspect}-api:0.1.0
+    build: *api-runtime
     profiles: [reviews]
     network_mode: service:api
     command: [node, dist/pull-request-worker.mjs]
@@ -112,8 +156,14 @@ services:
       INKSPECT_HEALTH_PORT: 8093
     restart: unless-stopped
     depends_on:
-      api: {condition: service_healthy}
+      activate: {condition: service_completed_successfully}
+    healthcheck:
+      test: [CMD, node, -e, 'fetch("http://127.0.0.1:8093/ready").then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))']
+      interval: 5s
+      timeout: 3s
+      retries: 30
 volumes:
   database:
   engine-state:
   vectors:
+  runtime-config:

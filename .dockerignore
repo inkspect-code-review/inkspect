@@ -1,7 +1,3 @@
-.git
-.env
-config
-**/node_modules
-**/.next
-**/dist
-**/.env*
+*
+!Dockerfile.engine
+!Dockerfile.runtime

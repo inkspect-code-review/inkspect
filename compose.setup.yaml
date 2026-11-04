@@ -1,0 +1,14 @@
+name: inkspect-setup
+services:
+  setup:
+    image: node:22-bookworm-slim
+    working_dir: /distribution
+    volumes:
+      - .:/distribution
+    command: [node, scripts/setup.mjs]
+  test:
+    image: node:22-bookworm-slim
+    working_dir: /distribution
+    volumes:
+      - .:/distribution:ro
+    command: [node, --test, tests/setup.test.mjs]

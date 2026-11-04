@@ -1,0 +1,10 @@
+# Optional remote builds using an existing GitHub-authorized SSH agent.
+services:
+  api:
+    build:
+      context: git@github.com:inkspect-code-review/inkspect-api.git#e43e758830f480ee8d52f23fdf62be2e954c8f61
+      ssh: [default]
+  web:
+    build:
+      context: git@github.com:inkspect-code-review/inkspect-ui.git#0f1e7665bb94cab4bf8c64aae0a8f83558335831
+      ssh: [default]

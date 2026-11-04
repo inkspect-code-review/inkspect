@@ -1,14 +1,63 @@
-# Self-hosted release checks
+# Distribution checks
 
-The initial 0.1.0 source distribution was checked on 2026-11-04.
+## Compose distribution — 2026-11-04
 
-- Core, API and UI installed, passed their source-boundary audits and tests, and built in separate clean directories without sibling source dependencies.
-- Membership, provider storage, chat, review execution and usage passed disposable PostgreSQL integration tests.
-- HTTP checks exercised sign-in, invitations, usage, workspace isolation and the built UI/API connection. Purchase endpoints returned 404; commercial billing tables were absent.
-- PostgreSQL, API and web containers started and passed health checks. Login returned HTTP 200.
-- Installer tests cover archive integrity, path traversal/link rejection, owner-only secrets, preservation of existing installations and Docker build ordering.
-- The pinned public Rust engine passed `cargo check --locked`. Worker startup was checked using a synthetic engine fixture. External GitHub/model calls and the optional Docker engine image were not exercised.
+The distribution uses Docker-only setup and source builds. Automated checks:
 
-Run `python3 -m unittest discover -s tests -v` and `./install.sh --check` in this repository. Run `npm ci`, `npm run audit`, `npm test`, `npm run build` in each component. API integration/runtime commands are in its package scripts and require a disposable PostgreSQL database. Never use production data for these checks.
+- Eight setup/configuration tests passed both on the host Node runtime and in the
+  documented Node container. They cover fresh independent secrets, permissions,
+  preservation of existing installations, symlink rejection, origin/secret
+  validation, missing review settings, model budgets and configuration refresh.
+- HTTPS/SSH component references are pinned to full commits and match each other.
+  Compose configuration and the generated build graph validate successfully.
+- The API and UI images built from the existing component checkouts using the
+  local-source override. The Rust engine built from its pinned public Git context
+  with the locked Cargo dependency graph; no substitute engine binary was used.
+- A fresh, isolated Compose project started PostgreSQL, migrations, API, web,
+  Qdrant, engine, metadata and PR workers. Configuration, migration and activation
+  jobs completed successfully. All application health checks passed.
+- Automated HTTP requests returned 200 for API, web login, engine, metadata,
+  PR-worker and Qdrant readiness. The host-bound web port also returned 200.
+- After stopping and recreating the full stack without deleting volumes, a test
+  database row and the engine activation were preserved; all health checks passed again.
+- Dashboard-only startup also passed with GitHub App settings and the private
+  key removed; the login page returned 200 and the copied key was absent.
+- The engine generation was activated automatically. The non-root app user could
+  read the copied owner-only configuration from its named volume.
 
-This report describes automated checks, not browser QA or a live deployment.
+The test instance used a synthetic GitHub App key, placeholder model identities
+and an empty database. No GitHub operations, SMTP deliveries or model requests
+were made. Startup/readiness does not prove those integrations. No browser QA or
+production deployment was performed. Windows Docker Desktop was not executed;
+its documented path uses Linux containers and the same Compose commands.
+Private remote SSH source downloads were not exercised; existing local checkouts
+were used for API/UI. Local builds include the files present in those checkouts,
+whereas the default remote configuration selects its published commit pins.
+
+Run distribution checks with:
+
+```sh
+docker compose -f compose.setup.yaml run --rm test
+```
+
+In a disposable checkout, run setup, `docker compose config --quiet` and
+`docker compose build --print`. For a full startup check, use a separate Compose
+project name, unused web port, disposable volumes and synthetic credentials.
+Never use production data or credentials for these checks. Tests of actual GitHub
+or model workflows require deliberately configured integration environments.
+
+## Earlier component checks
+
+The initial component distribution was checked on 2026-11-04:
+
+- Core, API and UI installed independently, passed source-boundary audits/tests,
+  and built without sibling source dependencies.
+- Membership, provider storage, chat, review execution and usage passed disposable
+  PostgreSQL integration tests.
+- HTTP checks exercised sign-in, invitations, usage, workspace isolation and the
+  built UI/API connection.
+
+Run `npm ci`, `npm run audit`, `npm test` and `npm run build` in each affected
+component. API integration/runtime commands are documented in its package scripts
+and require a disposable PostgreSQL database. These earlier checks do not claim
+that component suites were rerun for this distribution-only change.

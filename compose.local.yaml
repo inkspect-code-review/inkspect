@@ -1,0 +1,9 @@
+# Build existing sibling checkouts, using their Dockerfiles and vendored core.
+# No Git credentials are passed into Docker. The public engine is still pinned.
+services:
+  api:
+    build:
+      context: ../inkspect-api
+  web:
+    build:
+      context: ../inkspect-ui
