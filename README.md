@@ -2,7 +2,7 @@
 
 This repository installs the self-hosted dashboard, API and optional review workers. Payment processing, subscription purchases, paid seats, Cloud credits and Cloud support policies are not included. Authentication, organization roles and member invitations remain available.
 
-These repositories are private during preparation. This is not yet a published open-source release; component licensing remains in `LICENSE.proposed`. The existing public Rust engine retains its own license.
+Source code is licensed under [MIT](LICENSE). Repository visibility is managed separately; this preparation does not change visibility or publish a tagged release. The bundled engine retains its own license.
 
 ## Components
 
@@ -80,3 +80,10 @@ The sync command rebuilds internal packages in dependency order and updates lock
 Back up PostgreSQL, Qdrant, engine state, `.env` and `config/`. Do not run `docker compose down --volumes` on a real installation unless intentionally deleting its data. No automatic upgrade command is provided yet. For an upgrade, prepare a separate candidate directory, review migrations and validate against a restored backup before switching services. Reuse the intended instance secrets and storage explicitly; do not assume a code rollback reverses database migrations.
 
 See [release checks](docs/release-checks.md) for the automated self-hosted checks and their limits.
+
+## Contributing and community
+
+Read [CONTRIBUTING.md](CONTRIBUTING.md) for setup, checks, commit notation and
+opening a pull request. All changes need an entry in [CHANGELOG.md](CHANGELOG.md).
+Follow our [Code of Conduct](CODE_OF_CONDUCT.md), use [SUPPORT.md](SUPPORT.md)
+for help, and report vulnerabilities privately using [SECURITY.md](SECURITY.md).

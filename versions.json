@@ -4,11 +4,11 @@
   "artifacts": {
     "api": {
       "file": "vendor/inkspect-api-0.1.0.tar.gz",
-      "sha256": "3dbadc88b33c6458e983d0c8926395903515c075f61e7f73b324f7aec2e5a08d"
+      "sha256": "8e0f588e170c438fe805d1d859e43aa8b63f37a9467f83755cdab5e2342facee"
     },
     "ui": {
       "file": "vendor/inkspect-ui-0.1.0.tar.gz",
-      "sha256": "03017633465792a21440ead9873023aa90914e1dc6fa50f51a0cd3a6b1fa58a5"
+      "sha256": "5a3e4c27f3afc7a8309d456ca015255d4ae4849623d73199b53d4537bdcd6c02"
     },
     "engine": {
       "file": "vendor/engine-67702d3b.tar.gz",
