@@ -20,6 +20,9 @@ as appropriate. The package's `0.1.0` version is not a claim of a tagged release
 
 #### Fixed
 
+- Update the pinned checkout action to v7.0.1 (Node.js 24) to remove the
+  deprecated Node.js 20 action-runtime warning in distribution CI.
+
 - Expose Pubb settings in the distribution environment template and pass the public
   app key into the UI build while keeping the app secret in server runtime only.
 
