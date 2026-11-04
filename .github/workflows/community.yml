@@ -1,0 +1,23 @@
+name: Community standards
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, edited]
+permissions:
+  contents: read
+jobs:
+  title:
+    name: Pull request title
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Check conventional title
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          python3 - <<'PYTITLE'
+          import os, re
+          title = os.environ['PR_TITLE']
+          pattern = r'(feat|fix|docs|test|refactor|perf|build|ci|chore|revert)\([a-z0-9-]+\)!?: [a-z].+'
+          if not re.fullmatch(pattern, title) or len(title) > 72 or title.endswith('.'):
+              raise SystemExit('Use type(scope): short imperative description (max 72 characters).')
+          PYTITLE

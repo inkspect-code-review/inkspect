@@ -7,7 +7,7 @@ if not base:raise SystemExit('Usage: python3 scripts/assemble.py /directory/cont
 manifest={'release':'0.1.0','engine_commit':'67702d3b33df51c52e113bddcebd2039ff9db331','artifacts':{}}
 for name in ['api','ui']:
  source=base/('inkspect-'+name); archive=ROOT/'vendor'/('inkspect-'+name+'-0.1.0.tar.gz')
- allowed=['AGENTS.md','src','scripts','tests','migrations','vendor','public','.github','package.json','package-lock.json','tsconfig.json','next.config.ts','next-env.d.ts','postcss.config.mjs','eslint.config.mjs','Dockerfile','.dockerignore','.gitignore','.env.example','README.md','LICENSE.proposed']
+ allowed=['AGENTS.md','src','scripts','tests','migrations','vendor','public','.github','package.json','package-lock.json','tsconfig.json','next.config.ts','next-env.d.ts','postcss.config.mjs','eslint.config.mjs','Dockerfile','.dockerignore','.gitignore','.env.example','README.md','LICENSE','CHANGELOG.md','CONTRIBUTING.md','CODE_OF_CONDUCT.md','SECURITY.md','SUPPORT.md','.editorconfig','.gitattributes']
  with tarfile.open(archive,'w:gz') as tar:
   for entry in allowed:
    item=source/entry

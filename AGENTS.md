@@ -13,3 +13,12 @@ Edit package source in its owning repository, not `vendor/` or `node_modules`. R
 - Never deploy, change repository visibility, or publish a package merely because a commit/push was requested.
 - Manual UI/computer-use QA requires an explicit QA request. Otherwise finish with appropriate automated checks and state their limits.
 - Never stage credentials, real .env files, production/customer data, private keys, logs, installed dependencies or build output. Inspect dependency/release archives recursively too.
+
+## Contribution standard
+
+Read CONTRIBUTING.md before changing this repository. Match the review engine:
+commit and PR titles use `type(scope): short imperative description`, at most
+72 characters, without a trailing period. Every change requires a dated entry
+under Unreleased in CHANGELOG.md, including documentation and maintenance.
+Keep LICENSE in packaged source artifacts. Do not change repository visibility
+or publish packages merely because licensing or contribution docs changed.
