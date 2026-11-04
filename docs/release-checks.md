@@ -1,5 +1,18 @@
 # Distribution checks
 
+## Agent installation and Pubb build configuration — 2026-11-04
+
+- The eight setup tests and pinned-reference check passed.
+- Resolved Compose configuration and the BuildKit plan were checked with synthetic
+  Pubb credentials: the public app key reaches the UI build, all three credentials
+  reach the appropriate server runtime, and the secret is absent from build inputs.
+- A real UI Docker build using the local checkout contained the test public key
+  in browser assets and no test server secret in `.next` output. API rewrites
+  still point to the internal API service.
+- The agent guide was checked against current application routes and official
+  provider documentation. No account setup, email delivery, paid model call,
+  browser QA or live Pubb delivery was performed for this change.
+
 ## Compose distribution — 2026-11-04
 
 The distribution uses Docker-only setup and source builds. Automated checks:

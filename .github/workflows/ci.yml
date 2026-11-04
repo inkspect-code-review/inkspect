@@ -12,6 +12,12 @@ jobs:
       - run: docker compose -f compose.setup.yaml run --rm test
       - run: docker compose -f compose.setup.yaml run --rm setup
       - run: docker compose config --quiet
+      - name: Verify realtime build and runtime configuration
+        run: |
+          printf '\nNEXT_PUBLIC_PUBB_APP_KEY=compose-realtime-public-test\nPUBB_APP_ID=compose-realtime-test\nPUBB_APP_SECRET=compose-realtime-secret-test\n' >> .env
+          docker compose config --format json > /tmp/inkspect-compose-config.json
+          docker compose build --print web > /tmp/inkspect-web-build.json
+          docker run --rm -v "$PWD:/distribution:ro" -v /tmp/inkspect-compose-config.json:/tmp/config.json:ro -v /tmp/inkspect-web-build.json:/tmp/build.json:ro -w /distribution node:22-bookworm-slim node tests/realtime-build.mjs /tmp/config.json /tmp/build.json
       - run: docker compose -f compose.yaml -f compose.local.yaml config --quiet
       - run: docker compose build --print > /tmp/inkspect-build.json
       - name: Check SSH overlay and pin consistency without credentials

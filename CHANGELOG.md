@@ -10,10 +10,18 @@ as appropriate. The package's `0.1.0` version is not a claim of a tagged release
 
 #### Added
 
+- Agent-assisted installation prompt and a step-by-step guide covering GitHub App,
+  HTTPS, email, Pubb realtime, model access and verification.
+
 - Initial self-hosted installer and distribution source snapshot with independent setup and automated checks.
 - MIT license, contribution and community guidelines, security/support policies,
   issue forms, a pull-request checklist and dependency-update configuration.
 - Pull-request title validation matching the review engine's commit notation.
+
+#### Fixed
+
+- Expose Pubb settings in the distribution environment template and pass the public
+  app key into the UI build while keeping the app secret in server runtime only.
 
 #### Changed
 

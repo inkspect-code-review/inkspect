@@ -3,6 +3,27 @@
 Run the Inkspect dashboard, API and review engine with Docker Compose.
 Licensed under [MIT](LICENSE).
 
+## Install with an AI agent
+
+Give your coding agent this prompt. It will guide you through Docker setup,
+GitHub App credentials, email, Pubb realtime and model configuration. The full
+[agent installation guide](docs/agent-install.md) explains where to obtain each value.
+
+```text
+Help me install Inkspect Code Review using Docker Compose.
+Read https://github.com/inkspect-code-review/inkspect/blob/main/docs/agent-install.md
+first (or docs/agent-install.md in my local checkout).
+Inspect my environment, ask for missing information in small steps, and explain
+where to obtain each setting: domain/HTTPS, GitHub App ID and credentials, sign-in,
+SMTP, Pubb realtime and model access. Have me enter secrets locally, not in chat.
+Prepare and start the installation, preserve existing data, and verify what you
+can. Tell me precisely which sign-in, repository-review and realtime checks still
+need my action. Do not commit or push installation files.
+```
+
+If your agent cannot open the link, give it the guide file from your checkout.
+For manual installation, follow [Install](#install) below.
+
 ## Components
 
 | Repository | Purpose |
@@ -56,11 +77,18 @@ Edit `.env`:
 | `GITHUB_APP_CLIENT_ID`, `GITHUB_APP_CLIENT_SECRET` | Only when the repository App differs from the sign-in application |
 | `AWS_REGION` and AWS credentials | Your model-provider access; temporary credentials also need `AWS_SESSION_TOKEN` |
 | `INKSPECT_DEFAULT_CHAT_MODEL` | Your selected chat model |
+| `PUBB_APP_ID`, `PUBB_APP_SECRET`, `NEXT_PUBLIC_PUBB_APP_KEY` | Credentials from one Pubb application for live UI updates |
 | `COMPOSE_PROFILES` | `reviews` for the full stack; empty for dashboard/API only |
 
 If the container runtime already provides an AWS identity, explicit access keys
 are unnecessary. Configure supported model access for your chosen region.
 The generated secrets and internal service addresses need no manual configuration.
+
+For realtime updates, create/select an application in [Pubb](https://pubb.io/docs)
+and enter its App ID, public app key and app secret. Set all three before the first
+build. Compose sends only `NEXT_PUBLIC_PUBB_APP_KEY` to the UI build; the secret is
+used only at server runtime. Changing the public key requires rebuilding `web`,
+not just restarting it. Without these settings, the UI uses polling.
 
 For reviews, also:
 
