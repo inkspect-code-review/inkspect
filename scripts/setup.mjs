@@ -10,12 +10,14 @@ async function exists(path) {
   }
 }
 
-export async function setup(root, identity) {
+export async function setup(root, identity, provider = "bedrock") {
+  if (!["bedrock", "inkspect"].includes(provider)) throw new Error("Choose --provider=bedrock or --provider=inkspect.");
   // Never replace credentials, even if a previous run was interrupted.
   if (await exists(resolve(root, '.env')) || await exists(resolve(root, 'config'))) {
     throw new Error('Existing .env or config found. Preserve your configuration; setup never overwrites it.');
   }
   let env = await readFile(resolve(root, '.env.example'), 'utf8');
+  env = env.replace('INKSPECT_AI_PROVIDER=bedrock', `INKSPECT_AI_PROVIDER=${provider}`);
   const host = await readFile(resolve(root, 'host.example.json'), 'utf8');
   for (const name of ['POSTGRES_PASSWORD', 'BETTER_AUTH_SECRET', 'INKSPECT_ENGINE_SECRET']) {
     if (!env.includes(`${name}=\n`)) throw new Error(`Missing empty template field: ${name}`);
@@ -39,9 +41,11 @@ export async function setup(root, identity) {
 
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
   try {
-    const root = resolve(process.argv[2] || '.');
+    const args=process.argv.slice(2), option=args.find(arg=>arg.startsWith('--provider='));
+    const root = resolve(args.find(arg=>!arg.startsWith('--')) || '.');
+    const provider=option?.slice('--provider='.length) || 'bedrock';
     const owner = await lstat(root);
-    await setup(root, process.getuid?.() === 0 ? owner : undefined);
+    await setup(root, process.getuid?.() === 0 ? owner : undefined, provider);
     console.log('Created .env and config/. Set your public URL, sign-in credentials and review configuration before starting Compose.');
   } catch (error) { console.error(error.message); process.exitCode = 1; }
 }

@@ -204,3 +204,31 @@ component releases before updating the pinned Compose source references.
 See [release checks](docs/release-checks.md), [CONTRIBUTING.md](CONTRIBUTING.md),
 [CHANGELOG.md](CHANGELOG.md), [Code of Conduct](CODE_OF_CONDUCT.md),
 [SUPPORT.md](SUPPORT.md) and [SECURITY.md](SECURITY.md).
+
+## Use Inkspect as your AI provider
+
+Create an API key in your Inkspect Cloud workspace's **API keys** page. For a new
+installation, choose Inkspect during setup:
+
+```sh
+docker compose -f compose.setup.yaml run --rm setup node scripts/setup.mjs --provider=inkspect
+```
+
+Set `INKSPECT_API_KEY` in the local `.env` file. For an existing installation,
+set `INKSPECT_AI_PROVIDER=inkspect` and `INKSPECT_API_KEY` there, then recreate the
+services with `docker compose up -d --build --wait` using a release containing
+provider support (or the documented local source override while developing).
+Keep organization review settings on **Instance provider**; organization BYOK
+explicitly overrides review/fix models only.
+
+The configure service checks the key and obtains the review, embedding and
+reranking configuration. Reviews, fixes, chat, routing, titles and repository
+indexing then use Inkspect. AWS credentials are not required in this mode.
+Provider request contents are sent to Inkspect for processing. Repositories,
+indexes and application data remain on your instance. Usage consumes the Cloud
+workspace's existing AI Credits, and key revocation or expiry stops new requests.
+The Cloud usage ledger is authoritative for charges; local budget rates are
+admission ceilings. Cloud streams are delivered after usage has been verified.
+
+Source builds must use updated core/API/UI packages together. The pinned public
+release references are updated only when a release is explicitly authorized.

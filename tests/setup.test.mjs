@@ -107,3 +107,20 @@ test('review configuration validates model prices and refreshes copied files', a
   await prepareConfig(input,output,env);
   await assert.rejects(stat(join(output,'github-app.pem')), {code:'ENOENT'});
 });
+
+
+test('Inkspect setup selects the provider and fetches all model configuration without saving the key to host.json', async t => {
+  const root=await fixture(t); await setup(root,undefined,'inkspect');
+  const env=await envAt(root);assert.equal(env.INKSPECT_AI_PROVIDER,'inkspect');
+  env.INKSPECT_API_KEY='isk_live_'+'a'.repeat(64);
+  let calls=0;
+  const config={provider:'inkspect',model_id:'inkspect-review',model_region:'eu-west-2',model_max_output_tokens:8192,model_input_allowance:100000,model_max_request_bytes:1000000,input_nano_usd:100,output_nano_usd:200,budget_nano_usd:11638400,retrieval:{region:'eu-west-2',embed_model:'inkspect-embed',rerank_region:'eu-central-1',rerank_model:'inkspect-rerank',dimensions:1024}};
+  await prepareConfig(join(root,'config'),join(root,'runtime'),env,undefined,async(url,init)=>{
+    calls++;assert.equal(url,'https://app.inkspect.si/api/provider/config');assert.equal(init.redirect,'error');
+    assert.equal(init.headers.authorization,'Bearer '+env.INKSPECT_API_KEY);return Response.json(config);
+  });
+  const output=await readFile(join(root,'runtime','host.json'),'utf8');assert.equal(output.includes(env.INKSPECT_API_KEY),false);
+  assert.equal(JSON.parse(output).retrieval.embed_model,'inkspect-embed');assert.equal(calls,1);
+  await assert.rejects(prepareConfig(join(root,'config'),join(root,'runtime'),{...env,INKSPECT_API_KEY:''}),/API key/);
+  await assert.rejects(prepareConfig(join(root,'config'),join(root,'runtime'),env,undefined,async()=>new Response('',{status:401})),/could not be verified/);
+});

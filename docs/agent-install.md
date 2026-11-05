@@ -257,3 +257,13 @@ Finish with the installed source references/build mode, instance URL, configurat
 paths (never values), checks actually completed, remaining account/integration
 steps and restart/backup instructions. If something fails, identify the service
 and a redacted error; do not delete data volumes or regenerate secrets to retry.
+
+### Inkspect provider
+
+Offer `bedrock` (existing credentials) or `inkspect` (Cloud API key) during model
+setup. For Inkspect, follow the README's provider setup. Ask the user to enter
+`INKSPECT_API_KEY` locally. Never request or print the key. The configure service
+fetches the supported model configuration; do not invent rates or model IDs.
+This selection covers all instance AI operations. Organization BYOK is an
+explicit review/fix override. Explain that provider request content is sent to
+Inkspect and consumes the API key's Cloud workspace credit.

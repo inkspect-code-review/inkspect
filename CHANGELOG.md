@@ -10,6 +10,8 @@ as appropriate. The package's `0.1.0` version is not a claim of a tagged release
 
 #### Added
 
+- Optional Inkspect provider setup for all instance AI operations using a Cloud API key (2026-11-04).
+
 - Agent-assisted installation prompt and a step-by-step guide covering GitHub App,
   HTTPS, email, Pubb realtime, model access and verification.
 

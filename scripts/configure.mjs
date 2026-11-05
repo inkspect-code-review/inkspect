@@ -13,7 +13,7 @@ async function readRegular(path) {
   } finally { await file.close(); }
 }
 
-export async function prepareConfig(input, output, env, identity) {
+export async function prepareConfig(input, output, env, identity, fetcher = fetch) {
   const origin = new URL(env.BETTER_AUTH_URL || '');
   if (origin.protocol !== 'https:' || origin.username || origin.password || origin.pathname !== '/' || origin.search || origin.hash) {
     throw new Error('BETTER_AUTH_URL must be a public HTTPS origin.');
@@ -29,6 +29,24 @@ export async function prepareConfig(input, output, env, identity) {
     catch (error) {
       if (error.code === 'ENOENT' && !reviews) continue;
       throw new Error(`Cannot read config/${name}. Supply a regular, readable file.`);
+    }
+  }
+  const provider=env.INKSPECT_AI_PROVIDER || 'bedrock';
+  if(!['bedrock','inkspect'].includes(provider))throw new Error('Choose bedrock or inkspect as the AI provider.');
+  if(provider==='inkspect') {
+    if(!/^isk_live_[a-f0-9]{64}$/.test(env.INKSPECT_API_KEY || ''))throw new Error('Create an API key in Inkspect Cloud and set INKSPECT_API_KEY locally.');
+    let response;
+    try { response=await fetcher('https://app.inkspect.si/api/provider/config',{headers:{authorization:`Bearer ${env.INKSPECT_API_KEY}`},redirect:'error',signal:AbortSignal.timeout(15000)}); }
+    catch { throw new Error('Could not connect to the Inkspect provider. Check your connection and try again.'); }
+    if(!response.ok)throw new Error('Inkspect provider access could not be verified. Check your API key in Cloud.');
+    const text=await response.text(); if(text.length>20000)throw new Error('Invalid provider configuration.');
+    const config=JSON.parse(text);
+    if(config.provider!=='inkspect' || config.model_id!=='inkspect-review' || config.retrieval?.embed_model!=='inkspect-embed' || config.retrieval?.rerank_model!=='inkspect-rerank')throw new Error('Invalid provider configuration.');
+    if(files.has('host.json')) {
+      const host=JSON.parse(files.get('host.json'));
+      for(const name of ['model_id','model_region','model_max_output_tokens','model_input_allowance','model_max_request_bytes','input_nano_usd','output_nano_usd','budget_nano_usd'])host[name]=config[name];
+      host.retrieval={...host.retrieval,...config.retrieval};
+      files.set('host.json',JSON.stringify(host,null,2)+'\n');
     }
   }
   if (reviews) {
