@@ -110,6 +110,7 @@ Use these permissions for the current review workflow:
 | Repository metadata | Read | Repository identity and installation access |
 | Repository contents | Read | Read code and index repositories |
 | Pull requests | Read and write | PR access and review/comment publication; the current review worker requests this token permission |
+| Checks | Read and write | Show Inkspect review progress and the final result on the PR commit |
 | Account email addresses | Read, if using this App for sign-in | Read the user's verified email |
 
 Contents write access is only needed for workflows that deliberately publish code
