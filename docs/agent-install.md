@@ -118,7 +118,7 @@ changes; do not enable it for basic reviews. Do not enable unrelated organizatio
 Actions, administration or secrets permissions. Check current GitHub permission
 requirements before enabling extra features. [GitHub permission guidance](https://docs.github.com/en/apps/creating-github-apps/registering-a-github-app/choosing-permissions-for-a-github-app)
 
-Subscribe to **Pull request**, **Issue comment** and **Pull request review comment**
+Subscribe to **Pull request**, **Issue comment**, **Pull request review comment** and **Check run**
 events. Inkspect also handles installation and installation-repository changes,
 which GitHub delivers to Apps as installation lifecycle events. When permissions
 change, existing installations may need owner approval before the new grants work.
