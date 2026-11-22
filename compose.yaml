@@ -66,7 +66,7 @@ services:
   api:
     <<: *app
     build:
-      context: https://github.com/inkspect-code-review/inkspect-api.git#e43e758830f480ee8d52f23fdf62be2e954c8f61
+      context: https://github.com/inkspect-code-review/inkspect-api.git#9d818ad07792b44405d2512665473ce91aba0171
     restart: unless-stopped
     depends_on:
       migrate: {condition: service_completed_successfully}
@@ -78,7 +78,7 @@ services:
   web:
     <<: *app
     build:
-      context: https://github.com/inkspect-code-review/inkspect-ui.git#0f1e7665bb94cab4bf8c64aae0a8f83558335831
+      context: https://github.com/inkspect-code-review/inkspect-ui.git#fac749e26cc37fb21842288eb109619013e66c71
       # Keep the public key in the browser build; server secrets stay in env_file.
       # Inline so the pinned remote context and the local override use one recipe.
       dockerfile_inline: |
