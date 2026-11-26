@@ -6,6 +6,12 @@ as appropriate. The package's `0.1.0` version is not a claim of a tagged release
 
 ## Unreleased
 
+### 2026-11-26
+
+#### Changed
+
+- Move detailed Compose configuration, alternate builds and upgrades into the installation guide.
+
 ### 2026-11-22
 
 #### Changed
