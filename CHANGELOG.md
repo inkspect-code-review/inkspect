@@ -10,6 +10,8 @@ as appropriate. The package's `0.1.0` version is not a claim of a tagged release
 
 #### Changed
 
+- Document the startup order and how to test installer changes in the README.
+
 - Move detailed Compose configuration, alternate builds and upgrades into the installation guide.
 
 ### 2026-11-22
